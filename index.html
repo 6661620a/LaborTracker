@@ -1,0 +1,1671 @@
+<!DOCTYPE html lang='en'>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Labor Tracker</title>
+  <style>
+    /* Basic reset */
+    body, h1, h2, p, table {
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start; /* top-align the container */
+      justify-content: center;
+      padding: 20px;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+    .container {
+      position: relative; /* for positioning the info button */
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      padding: 20px;
+      max-width: 600px;
+      width: 100%;
+      transition: background 0.3s, color 0.3s;
+    }
+    /* Headings with IDs for translation */
+    h1#title {
+      text-align: center;
+      margin-bottom: 20px;
+      color: inherit;
+    }
+    h2#headlineAverages,
+    h2#headlineHistory {
+      text-align: center;
+      margin-bottom: 10px;
+      color: inherit;
+    }
+    .controls {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    /* Base button styles */
+    button {
+      font-size: 16px;
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #74ebd5;
+      color: #333;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    button:hover {
+      background-color: #ACB6E5;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .reset-btn {
+      background-color: #ff6b6b;
+      color: #fff;
+    }
+    .reset-btn:hover {
+      background-color: #ff4c4c;
+    }
+    /* The single Start/Stop button uses the same base size as the Reset button */
+    .status, .averages, .history {
+      margin-bottom: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+      font-size: 12px; /* reduced font size for better fit */
+    }
+    th {
+      background-color: #f2f2f2;
+      white-space: normal; /* allow header text to wrap */
+    }
+    /* Pause row styling */
+    .pause-row {
+      background-color: #e0e0e0;
+    }
+    body.dark-theme .pause-row {
+      background-color: #555;
+    }
+    /* Info button - perfectly round, smaller and more subtle */
+    .info-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #74ebd5;
+      color: #fff;
+      border: none;
+      font-size: 10px;
+      padding: 0;
+      line-height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-sizing: border-box;
+      opacity: 0.4;
+      transition: opacity 0.3s;
+    }
+    .info-button:hover {
+      opacity: 0.8;
+    }
+    /* Info popup */
+    .info-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      z-index: 2000;
+      max-width: 80%;
+      text-align: center;
+      transition: background 0.3s, color 0.3s;
+    }
+    /* Stopwatch */
+    .stopwatch {
+      display: none;
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: inherit;
+    }
+    /* Theme toggle button */
+    .theme-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #74ebd5;
+      color: #fff;
+      border: none;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      z-index: 3000;
+    }
+    .theme-toggle:hover {
+      background-color: #ACB6E5;
+    }
+    /* Export button */
+    .export-button {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #74ebd5;
+      color: #fff;
+      border: none;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      z-index: 3000;
+    }
+    .export-button:hover {
+      background-color: #ACB6E5;
+    }
+    /* Dark theme overrides */
+    body.dark-theme {
+      background: linear-gradient(to right, #2c3e50, #4a5568);
+      color: #ddd;
+    }
+    body.dark-theme .container {
+      background: #2c3e50;
+      color: #ddd;
+    }
+    body.dark-theme button {
+      background-color: #4a5568;
+      color: #ddd;
+    }
+    body.dark-theme .reset-btn {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+    body.dark-theme th, body.dark-theme td {
+      border: 1px solid #555;
+    }
+    body.dark-theme th {
+      background-color: #3a3a3a;
+    }
+    body.dark-theme .info-popup {
+      background: #2c3e50;
+      border: 1px solid #555;
+      color: #ddd;
+    }
+    /* --- Media Query for Small Screens --- */
+    @media screen and (max-width: 400px) {
+      th, td {
+        font-size: 10px;
+        padding: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="title">Labor Tracker</h1>
+    <button id="infoButton" class="info-button">i</button>
+    <div class="controls">
+      <!-- Single Start/Stop button (same size as Reset) -->
+      <button id="startStopButton">Start</button>
+      <button id="resetButton" class="reset-btn">Reset Data</button>
+    </div>
+    <div id="status" class="status"></div>
+    <div id="stopwatch" class="stopwatch"></div>
+    <h2 id="headlineAverages">Averages</h2>
+    <div id="averages" class="averages"></div>
+    <h2 id="headlineHistory">Contraction History</h2>
+    <div id="history" class="history"></div>
+  </div>
+
+  <div id="infoPopup" class="info-popup">
+    <!-- Info popup text will be updated dynamically -->
+  </div>
+
+  <button id="themeToggle" class="theme-toggle">🌙</button>
+  <button id="exportCSV" class="export-button">⇩</button>
+
+  <script>
+  // --- Browser Language Detection ---
+  var browserLang = navigator.language || navigator.userLanguage || "en";
+  var currentLang;
+  if (browserLang.toLowerCase().indexOf("de") === 0) {
+    currentLang = "de";
+  } else {
+    currentLang = "en";
+  }
+
+  (function(){
+    // --- Translation Structure ---
+    var i18n = {
+      en: {
+        title: "Labor Tracker",
+        headlineAverages: "Averages",
+        headlineHistory: "Contraction History",
+        start: "Start",
+        stop: "Stop",
+        reset: "Reset Data",
+        contractionInProgress: "Contraction in progress",
+        noContractionInProgress: "No contraction in progress.",
+        averageContractionDuration: "Average Contraction Duration:",
+        averagePauseDuration: "Average Pause Duration:",
+        noContractionHistory: "No contraction history recorded.",
+        contraction: "Contraction",
+        pause: "Pause",
+        elapsed: "Elapsed:",
+        infoText: "All data is stored locally in your browser using cookies, and nothing is sent over the network. You can download this file and run it offline at any time on any device.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Type",
+        tableStartTime: "Start Time",
+        tableStopTime: "Stop Time",
+        tableDuration: "Duration",
+        startedAt: "started at",
+        confirmReset: "Are you sure you want to delete all contraction data? This cannot be undone."
+      },
+      de: {
+        title: "Wehen Tracker",
+        headlineAverages: "Durchschnittswerte",
+        headlineHistory: "Wehenverlauf",
+        start: "Start",  // Not "Starten"
+        stop: "Stopp",
+        reset: "Daten zurücksetzen",
+        contractionInProgress: "Wehen im Gange",
+        noContractionInProgress: "Keine Wehen im Gange.",
+        averageContractionDuration: "Durchschnittliche Wehendauer:",
+        averagePauseDuration: "Durchschnittliche Pausendauer:",
+        noContractionHistory: "Kein Wehenverlauf vorhanden.",
+        contraction: "Wehe",
+        pause: "Pause",
+        elapsed: "Verstrichen:",
+        infoText: "Alle Daten werden lokal in Ihrem Browser als Cookies gespeichert, und es werden keine Daten über das Netzwerk gesendet. Sie können diese Datei herunterladen und jederzeit offline auf jedem Gerät ausführen.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Beginn",
+        tableStopTime: "Ende",
+        tableDuration: "Dauer",
+        startedAt: "gestartet",
+        confirmReset: "Sind Sie sicher, dass Sie alle Wehendaten löschen möchten? Dies kann nicht rückgängig gemacht werden."
+      },
+      es: {
+        title: "Rastreador de Contracciones",
+        headlineAverages: "Promedios",
+        headlineHistory: "Historial de Contracciones",
+        start: "Iniciar",
+        stop: "Detener",
+        reset: "Restablecer datos",
+        contractionInProgress: "Contracción en curso",
+        noContractionInProgress: "No hay contracción en curso.",
+        averageContractionDuration: "Duración promedio de la contracción:",
+        averagePauseDuration: "Duración promedio de la pausa:",
+        noContractionHistory: "No se ha registrado historial de contracciones.",
+        contraction: "Contracción",
+        pause: "Pausa",
+        elapsed: "Transcurrido:",
+        infoText: "Todos los datos se almacenan localmente en su navegador mediante cookies, y nada se envía a través de la red. Puede descargar este archivo y ejecutarlo sin conexión en cualquier momento en cualquier dispositivo.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Tipo",
+        tableStartTime: "Hora de inicio",
+        tableStopTime: "Hora de finalización",
+        tableDuration: "Duración",
+        startedAt: "iniciado a las",
+        confirmReset: "¿Está seguro de que desea eliminar todos los datos de contracción? Esto no se puede deshacer."
+      },
+      fr: {
+        title: "Suivi des Contractions",
+        headlineAverages: "Moyennes",
+        headlineHistory: "Historique des Contractions",
+        start: "Démarrer",
+        stop: "Arrêter",
+        reset: "Réinitialiser les données",
+        contractionInProgress: "Contraction en cours",
+        noContractionInProgress: "Aucune contraction en cours.",
+        averageContractionDuration: "Durée moyenne des contractions :",
+        averagePauseDuration: "Durée moyenne des pauses :",
+        noContractionHistory: "Aucun historique de contractions enregistré.",
+        contraction: "Contraction",
+        pause: "Pause",
+        elapsed: "Écoulé :",
+        infoText: "Toutes les données sont stockées localement dans votre navigateur à l'aide de cookies, et aucune information n'est transmise sur le réseau. Vous pouvez télécharger ce fichier et l'exécuter hors ligne à tout moment sur n'importe quel appareil.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Type",
+        tableStartTime: "Heure de début",
+        tableStopTime: "Heure de fin",
+        tableDuration: "Durée",
+        startedAt: "commencé à",
+        confirmReset: "Êtes-vous sûr de vouloir supprimer toutes les données de contraction ? Cela ne peut pas être annulé."
+      },
+      zh: {
+        title: "产程追踪",
+        headlineAverages: "平均值",
+        headlineHistory: "宫缩记录",
+        start: "开始",
+        stop: "停止",
+        reset: "重置数据",
+        contractionInProgress: "宫缩进行中",
+        noContractionInProgress: "当前没有宫缩。",
+        averageContractionDuration: "宫缩平均时长：",
+        averagePauseDuration: "停顿平均时长：",
+        noContractionHistory: "没有记录到宫缩记录。",
+        contraction: "宫缩",
+        pause: "暂停",
+        elapsed: "已过时间：",
+        infoText: "所有数据都使用 cookies 保存在您的浏览器中，并且不会通过网络传输。您可以下载此文件，并在任何设备上离线运行。",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "类型",
+        tableStartTime: "开始时间",
+        tableStopTime: "结束时间",
+        tableDuration: "时长",
+        startedAt: "开始于",
+        confirmReset: "您确定要删除所有宫缩数据吗？此操作无法撤销。"
+      },
+      hi: {
+        title: "प्रसव ट्रैकर",
+        headlineAverages: "औसत",
+        headlineHistory: "संकुचन इतिहास",
+        start: "प्रारंभ",
+        stop: "रोकें",
+        reset: "डेटा रीसेट करें",
+        contractionInProgress: "संकुचन चल रहा है",
+        noContractionInProgress: "कोई संकुचन नहीं चल रहा है।",
+        averageContractionDuration: "औसत संकुचन अवधि:",
+        averagePauseDuration: "औसत विराम अवधि:",
+        noContractionHistory: "कोई संकुचन इतिहास रिकॉर्ड नहीं है।",
+        contraction: "संकुचन",
+        pause: "विराम",
+        elapsed: "बीता हुआ समय:",
+        infoText: "सभी डेटा आपके ब्राउज़र में कुकीज़ के माध्यम से स्थानीय रूप से संग्रहीत किए जाते हैं, और नेटवर्क पर कुछ भी नहीं भेजा जाता। आप इस फ़ाइल को डाउनलोड कर सकते हैं और किसी भी डिवाइस पर ऑफ़लाइन चला सकते हैं।",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "प्रकार",
+        tableStartTime: "प्रारंभ समय",
+        tableStopTime: "समाप्ति समय",
+        tableDuration: "अवधि",
+        startedAt: "पर शुरू हुआ",
+        confirmReset: "क्या आप वाकई सभी संकुचन डेटा को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।"
+      },
+      pt: {
+        title: "Rastreador de Contrações",
+        headlineAverages: "Médias",
+        headlineHistory: "Histórico de Contrações",
+        start: "Iniciar",
+        stop: "Parar",
+        reset: "Redefinir Dados",
+        contractionInProgress: "Contração em andamento",
+        noContractionInProgress: "Nenhuma contração em andamento.",
+        averageContractionDuration: "Duração média da contração:",
+        averagePauseDuration: "Duração média da pausa:",
+        noContractionHistory: "Nenhum histórico de contrações registrado.",
+        contraction: "Contração",
+        pause: "Pausa",
+        elapsed: "Decorrido:",
+        infoText: "Todos os dados são armazenados localmente no seu navegador usando cookies, e nada é enviado pela rede. Você pode baixar este arquivo e executá-lo offline a qualquer momento em qualquer dispositivo.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Tipo",
+        tableStartTime: "Hora de Início",
+        tableStopTime: "Hora de Término",
+        tableDuration: "Duração",
+        startedAt: "iniciado às",
+        confirmReset: "Tem certeza de que deseja excluir todos os dados de contração? Isso não pode ser desfeito."
+      },
+      el: {
+        title: "Παρακολούθηση συστολών",
+        headlineAverages: "Μέσοι Όροι",
+        headlineHistory: "Ιστορικό συστολών",
+        start: "Έναρξη",
+        stop: "Διακοπή",
+        reset: "Επαναφορά δεδομένων",
+        contractionInProgress: "Συστολή σε εξέλιξη",
+        noContractionInProgress: "Δεν υπάρχει συστολή σε εξέλιξη.",
+        averageContractionDuration: "Μέση διάρκεια συστολής:",
+        averagePauseDuration: "Μέση διάρκεια διακοπής:",
+        noContractionHistory: "Δεν έχει καταγραφεί ιστορικό συστολών.",
+        contraction: "Συστολή",
+        pause: "Διάλειμμα",
+        elapsed: "Παρελθόν:",
+        infoText: "Όλα τα δεδομένα αποθηκεύονται τοπικά στον περιηγητή σας χρησιμοποιώντας cookies και τίποτα δεν αποστέλλεται μέσω του δικτύου. Μπορείτε να κατεβάσετε αυτό το αρχείο και να το εκτελέσετε εκτός σύνδεσης σε οποιαδήποτε συσκευή.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Τύπος",
+        tableStartTime: "Ώρα έναρξης",
+        tableStopTime: "Ώρα διακοπής",
+        tableDuration: "Διάρκεια",
+        startedAt: "ξεκίνησε στις",
+        confirmReset: "Είστε βέβαιοι ότι θέλετε να διαγράψετε όλα τα δεδομένα συστολής; Αυτό δεν μπορεί να αναιρεθεί."
+      },
+      sv: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      },
+      nl: {
+        title: "Wehentracker",
+        headlineAverages: "Gemiddelden",
+        headlineHistory: "Geschiedenis van contracties",
+        start: "Start",
+        stop: "Stop",
+        reset: "Reset gegevens",
+        contractionInProgress: "Contractie bezig",
+        noContractionInProgress: "Geen contractie bezig.",
+        averageContractionDuration: "Gemiddelde contractieduur:",
+        averagePauseDuration: "Gemiddelde pauzeduur:",
+        noContractionHistory: "Geen contractiegeschiedenis geregistreerd.",
+        contraction: "Contractie",
+        pause: "Pauze",
+        elapsed: "Verstreken tijd:",
+        infoText: "Alle gegevens worden lokaal in je browser opgeslagen met cookies, en er wordt niets over het netwerk verzonden. Je kunt dit bestand downloaden en offline op elk moment op elk apparaat uitvoeren.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Type",
+        tableStartTime: "Starttijd",
+        tableStopTime: "Eindtijd",
+        tableDuration: "Duur",
+        startedAt: "gestart om",
+        confirmReset: "Weet je zeker dat je alle contractiegegevens wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+      },
+      pl: {
+        title: "Śledzenie skurczów",
+        headlineAverages: "Średnie",
+        headlineHistory: "Historia skurczów",
+        start: "Rozpocznij",
+        stop: "Zatrzymaj",
+        reset: "Resetuj dane",
+        contractionInProgress: "Skurcz w toku",
+        noContractionInProgress: "Brak trwającego skurczu.",
+        averageContractionDuration: "Średni czas trwania skurczu:",
+        averagePauseDuration: "Średni czas trwania przerwy:",
+        noContractionHistory: "Brak zapisanej historii skurczów.",
+        contraction: "Skurcz",
+        pause: "Przerwa",
+        elapsed: "Minęło:",
+        infoText: "Wszystkie dane są przechowywane lokalnie w Twojej przeglądarce za pomocą ciasteczek i nic nie jest wysyłane. Możesz pobrać ten plik i uruchomić go offline na dowolnym urządzeniu w dowolnym momencie.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Czas rozpoczęcia",
+        tableStopTime: "Czas zakończenia",
+        tableDuration: "Czas trwania",
+        startedAt: "rozpoczęto o",
+        confirmReset: "Czy na pewno chcesz usunąć wszystkie dane dotyczące skurczów? Operacja ta nie może zostać cofnięta."
+      },
+      hu: {
+        title: "Összehúzódáskövető",
+        headlineAverages: "Átlagok",
+        headlineHistory: "Összehúzódások története",
+        start: "Indítás",
+        stop: "Leállítás",
+        reset: "Adatok visszaállítása",
+        contractionInProgress: "Összehúzódás folyamatban",
+        noContractionInProgress: "Nincs folyamatban lévő összehúzódás.",
+        averageContractionDuration: "Összehúzódás átlagos időtartama:",
+        averagePauseDuration: "Szünet átlagos időtartama:",
+        noContractionHistory: "Nincs rögzített összehúzódás előzmény.",
+        contraction: "Összehúzódás",
+        pause: "Szünet",
+        elapsed: "Eltelt idő:",
+        infoText: "Minden adatot a böngészőben sütikkel helyileg tárolunk, és semmi sem kerül elküldésre a hálózaton keresztül. Ezt a fájlt letöltheted, és bármikor offline, bármilyen eszközön futtathatod.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Típus",
+        tableStartTime: "Kezdés ideje",
+        tableStopTime: "Befejezés ideje",
+        tableDuration: "Időtartam",
+        startedAt: "elindult ekkor",
+        confirmReset: "Biztosan törölni szeretnéd az összes összehúzódási adatot? Ezt nem lehet visszavonni."
+      },
+      th: {
+        title: "ตัวติดตามการคลอด",
+        headlineAverages: "ค่าเฉลี่ย",
+        headlineHistory: "ประวัติการหดตัว",
+        start: "เริ่มต้น",
+        stop: "หยุด",
+        reset: "รีเซ็ตข้อมูล",
+        contractionInProgress: "กำลังเกิดการหดตัว",
+        noContractionInProgress: "ไม่มีการหดตัวเกิดขึ้น",
+        averageContractionDuration: "ระยะเวลาการหดตัวเฉลี่ย:",
+        averagePauseDuration: "ระยะเวลาหยุดเฉลี่ย:",
+        noContractionHistory: "ไม่พบประวัติการหดตัว",
+        contraction: "การหดตัว",
+        pause: "หยุดพัก",
+        elapsed: "เวลาที่ผ่านไป:",
+        infoText: "ข้อมูลทั้งหมดจะถูกเก็บไว้ในเบราว์เซอร์ของคุณโดยใช้คุกกี้ และไม่มีข้อมูลใดถูกส่งผ่านเครือข่าย คุณสามารถดาวน์โหลดไฟล์นี้และใช้งานแบบออฟไลน์ได้ทุกเมื่อบนอุปกรณ์ใดก็ได้",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "ประเภท",
+        tableStartTime: "เวลาเริ่มต้น",
+        tableStopTime: "เวลาหยุด",
+        tableDuration: "ระยะเวลา",
+        startedAt: "เริ่มที่",
+        confirmReset: "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการหดตัวทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้."
+      },
+      sw: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      },
+      am: {
+        title: "የወሊድ ቁጥጥር",
+        headlineAverages: "አማካይ",
+        headlineHistory: "ኮንትራክሽን ታሪክ",
+        start: "ጀምር",
+        stop: "ቆም",
+        reset: "ዳታ እንደገና ማስቀመጥ",
+        contractionInProgress: "ኮንትራክሽን በሂደት ላይ",
+        noContractionInProgress: "ኮንትራክሽን በሂደት ላይ የለም።",
+        averageContractionDuration: "የኮንትራክሽን አማካይ ቆይታ:",
+        averagePauseDuration: "የማቆም አማካይ ቆይታ:",
+        noContractionHistory: "የኮንትራክሽን ታሪክ አልተመዘገበም።",
+        contraction: "ኮንትራክሽን",
+        pause: "ቆም",
+        elapsed: "ያልፈው ጊዜ:",
+        infoText: "ሁሉም ዳታ በኩኪዎች በመጠቀም በብሮዙርዎ ውስጥ አካባቢያዊ ይደረጋል፣ እና ምንም ነገር በመስመር ላይ አይልክም። ይህን ፋይል ማውረድ እና በማንኛውም መሣሪያ በተለያዩ ጊዜያት ኦፍላይን ማስተካከል ይችላሉ።",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "አይነት",
+        tableStartTime: "መጀመሪያ ጊዜ",
+        tableStopTime: "መዝጊያ ጊዜ",
+        tableDuration: "ቆይታ",
+        startedAt: "ጀምሯል በ",
+        confirmReset: "እርግጠኛ ነዎት ሁሉንም የኮንትራክሽን ዳታ መሰረዝ ይፈልጋሉ? ይህ ተመላሽ አይሆንም።"
+      },
+      th: {
+        title: "ตัวติดตามการคลอด",
+        headlineAverages: "ค่าเฉลี่ย",
+        headlineHistory: "ประวัติการหดตัว",
+        start: "เริ่มต้น",
+        stop: "หยุด",
+        reset: "รีเซ็ตข้อมูล",
+        contractionInProgress: "กำลังเกิดการหดตัว",
+        noContractionInProgress: "ไม่มีการหดตัวเกิดขึ้น",
+        averageContractionDuration: "ระยะเวลาการหดตัวเฉลี่ย:",
+        averagePauseDuration: "ระยะเวลาหยุดเฉลี่ย:",
+        noContractionHistory: "ไม่พบประวัติการหดตัว",
+        contraction: "การหดตัว",
+        pause: "หยุดพัก",
+        elapsed: "เวลาที่ผ่านไป:",
+        infoText: "ข้อมูลทั้งหมดจะถูกเก็บไว้ในเบราว์เซอร์ของคุณโดยใช้คุกกี้ และไม่มีข้อมูลใดถูกส่งผ่านเครือข่าย คุณสามารถดาวน์โหลดไฟล์นี้และใช้งานแบบออฟไลน์ได้ทุกเมื่อบนอุปกรณ์ใดก็ได้",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "ประเภท",
+        tableStartTime: "เวลาเริ่มต้น",
+        tableStopTime: "เวลาหยุด",
+        tableDuration: "ระยะเวลา",
+        startedAt: "เริ่มที่",
+        confirmReset: "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการหดตัวทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้."
+      },
+      sw: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      },
+      am: {
+        title: "የወሊድ ቁጥጥር",
+        headlineAverages: "አማካይ",
+        headlineHistory: "ኮንትራክሽን ታሪክ",
+        start: "ጀምር",
+        stop: "ቆም",
+        reset: "ዳታ እንደገና ማስቀመጥ",
+        contractionInProgress: "ኮንትራክሽን በሂደት ላይ",
+        noContractionInProgress: "ኮንትራክሽን በሂደት ላይ የለም።",
+        averageContractionDuration: "የኮንትራክሽን አማካይ ቆይታ:",
+        averagePauseDuration: "የማቆም አማካይ ቆይታ:",
+        noContractionHistory: "የኮንትራክሽን ታሪክ አልተመዘገበም።",
+        contraction: "ኮንትራክሽን",
+        pause: "ቆም",
+        elapsed: "ያልፈው ጊዜ:",
+        infoText: "ሁሉም ዳታ በኩኪዎች በመጠቀም በብሮዙርዎ ውስጥ አካባቢያዊ ይደረጋል፣ እና ምንም ነገር በመስመር ላይ አይልክም። ይህን ፋይል ማውረድ እና በማንኛውም መሣሪያ በተለያዩ ጊዜያት ኦፍላይን ማስተካከል ይችላሉ።",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "አይነት",
+        tableStartTime: "መጀመሪያ ጊዜ",
+        tableStopTime: "መዝጊያ ጊዜ",
+        tableDuration: "ቆይታ",
+        startedAt: "ጀምሯል በ",
+        confirmReset: "እርግጠኛ ነዎት ሁሉንም የኮንትራክሽን ዳታ መሰረዝ ይፈልጋሉ? ይህ ተመላሽ አይሆንም።"
+      },
+      th: {
+        title: "ตัวติดตามการคลอด",
+        headlineAverages: "ค่าเฉลี่ย",
+        headlineHistory: "ประวัติการหดตัว",
+        start: "เริ่มต้น",
+        stop: "หยุด",
+        reset: "รีเซ็ตข้อมูล",
+        contractionInProgress: "กำลังเกิดการหดตัว",
+        noContractionInProgress: "ไม่มีการหดตัวเกิดขึ้น",
+        averageContractionDuration: "ระยะเวลาการหดตัวเฉลี่ย:",
+        averagePauseDuration: "ระยะเวลาหยุดเฉลี่ย:",
+        noContractionHistory: "ไม่พบประวัติการหดตัว",
+        contraction: "การหดตัว",
+        pause: "หยุดพัก",
+        elapsed: "เวลาที่ผ่านไป:",
+        infoText: "ข้อมูลทั้งหมดจะถูกเก็บไว้ในเบราว์เซอร์ของคุณโดยใช้คุกกี้ และไม่มีข้อมูลใดถูกส่งผ่านเครือข่าย คุณสามารถดาวน์โหลดไฟล์นี้และใช้งานแบบออฟไลน์ได้ทุกเมื่อบนอุปกรณ์ใดก็ได้",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "ประเภท",
+        tableStartTime: "เวลาเริ่มต้น",
+        tableStopTime: "เวลาหยุด",
+        tableDuration: "ระยะเวลา",
+        startedAt: "เริ่มที่",
+        confirmReset: "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการหดตัวทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้."
+      },
+      sw: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      },
+      nl: {
+        title: "Wehentracker",
+        headlineAverages: "Gemiddelden",
+        headlineHistory: "Geschiedenis van contracties",
+        start: "Start",
+        stop: "Stop",
+        reset: "Reset gegevens",
+        contractionInProgress: "Contractie bezig",
+        noContractionInProgress: "Geen contractie bezig.",
+        averageContractionDuration: "Gemiddelde contractieduur:",
+        averagePauseDuration: "Gemiddelde pauzeduur:",
+        noContractionHistory: "Geen contractiegeschiedenis geregistreerd.",
+        contraction: "Contractie",
+        pause: "Pauze",
+        elapsed: "Verstreken tijd:",
+        infoText: "Alle gegevens worden lokaal in je browser opgeslagen met cookies, en er wordt niets over het netwerk verzonden. Je kunt dit bestand downloaden en offline op elk moment op elk apparaat uitvoeren.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Type",
+        tableStartTime: "Starttijd",
+        tableStopTime: "Eindtijd",
+        tableDuration: "Duur",
+        startedAt: "gestart om",
+        confirmReset: "Weet je zeker dat je alle contractiegegevens wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+      },
+      pl: {
+        title: "Śledzenie skurczów",
+        headlineAverages: "Średnie",
+        headlineHistory: "Historia skurczów",
+        start: "Rozpocznij",
+        stop: "Zatrzymaj",
+        reset: "Resetuj dane",
+        contractionInProgress: "Skurcz w toku",
+        noContractionInProgress: "Brak trwającego skurczu.",
+        averageContractionDuration: "Średni czas trwania skurczu:",
+        averagePauseDuration: "Średni czas trwania przerwy:",
+        noContractionHistory: "Brak zapisanej historii skurczów.",
+        contraction: "Skurcz",
+        pause: "Przerwa",
+        elapsed: "Minęło:",
+        infoText: "Wszystkie dane są przechowywane lokalnie w Twojej przeglądarce za pomocą ciasteczek i nic nie jest wysyłane. Możesz pobrać ten plik i uruchomić go offline na dowolnym urządzeniu w dowolnym momencie.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Czas rozpoczęcia",
+        tableStopTime: "Czas zakończenia",
+        tableDuration: "Czas trwania",
+        startedAt: "rozpoczęto o",
+        confirmReset: "Czy na pewno chcesz usunąć wszystkie dane dotyczące skurczów? Operacja ta nie może zostać cofnięta."
+      },
+      hu: {
+        title: "Összehúzódáskövető",
+        headlineAverages: "Átlagok",
+        headlineHistory: "Összehúzódások története",
+        start: "Indítás",
+        stop: "Leállítás",
+        reset: "Adatok visszaállítása",
+        contractionInProgress: "Összehúzódás folyamatban",
+        noContractionInProgress: "Nincs folyamatban lévő összehúzódás.",
+        averageContractionDuration: "Összehúzódás átlagos időtartama:",
+        averagePauseDuration: "Szünet átlagos időtartama:",
+        noContractionHistory: "Nincs rögzített összehúzódás előzmény.",
+        contraction: "Összehúzódás",
+        pause: "Szünet",
+        elapsed: "Eltelt idő:",
+        infoText: "Minden adatot a böngészőben sütikkel helyileg tárolunk, és semmi sem kerül elküldésre a hálózaton keresztül. Ezt a fájlt letöltheted, és bármikor offline, bármilyen eszközön futtathatod.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Típus",
+        tableStartTime: "Kezdés ideje",
+        tableStopTime: "Befejezés ideje",
+        tableDuration: "Időtartam",
+        startedAt: "elindult ekkor",
+        confirmReset: "Biztosan törölni szeretnéd az összes összehúzódási adatot? Ezt nem lehet visszavonni."
+      },
+      th: {
+        title: "ตัวติดตามการคลอด",
+        headlineAverages: "ค่าเฉลี่ย",
+        headlineHistory: "ประวัติการหดตัว",
+        start: "เริ่มต้น",
+        stop: "หยุด",
+        reset: "รีเซ็ตข้อมูล",
+        contractionInProgress: "กำลังเกิดการหดตัว",
+        noContractionInProgress: "ไม่มีการหดตัวเกิดขึ้น",
+        averageContractionDuration: "ระยะเวลาการหดตัวเฉลี่ย:",
+        averagePauseDuration: "ระยะเวลาหยุดเฉลี่ย:",
+        noContractionHistory: "ไม่พบประวัติการหดตัว",
+        contraction: "การหดตัว",
+        pause: "หยุดพัก",
+        elapsed: "เวลาที่ผ่านไป:",
+        infoText: "ข้อมูลทั้งหมดจะถูกเก็บไว้ในเบราว์เซอร์ของคุณโดยใช้คุกกี้ และไม่มีข้อมูลใดถูกส่งผ่านเครือข่าย คุณสามารถดาวน์โหลดไฟล์นี้และใช้งานแบบออฟไลน์ได้ทุกเมื่อบนอุปกรณ์ใดก็ได้",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "ประเภท",
+        tableStartTime: "เวลาเริ่มต้น",
+        tableStopTime: "เวลาหยุด",
+        tableDuration: "ระยะเวลา",
+        startedAt: "เริ่มที่",
+        confirmReset: "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการหดตัวทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้."
+      },
+      sw: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      },
+      am: {
+        title: "የወሊድ ቁጥጥር",
+        headlineAverages: "አማካይ",
+        headlineHistory: "ኮንትራክሽን ታሪክ",
+        start: "ጀምር",
+        stop: "ቆም",
+        reset: "ዳታ እንደገና ማስቀመጥ",
+        contractionInProgress: "ኮንትራክሽን በሂደት ላይ",
+        noContractionInProgress: "ኮንትራክሽን በሂደት ላይ የለም።",
+        averageContractionDuration: "የኮንትራክሽን አማካይ ቆይታ:",
+        averagePauseDuration: "የማቆም አማካይ ቆይታ:",
+        noContractionHistory: "የኮንትራክሽን ታሪክ አልተመዘገበም።",
+        contraction: "ኮንትራክሽን",
+        pause: "ቆም",
+        elapsed: "ያልፈው ጊዜ:",
+        infoText: "ሁሉም ዳታ በኩኪዎች በመጠቀም በብሮዙርዎ ውስጥ አካባቢያዊ ይደረጋል፣ እና ምንም ነገር በመስመር ላይ አይልክም። ይህን ፋይል ማውረድ እና በማንኛውም መሣሪያ በተለያዩ ጊዜያት ኦፍላይን ማስተካከል ይችላሉ።",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "አይነት",
+        tableStartTime: "መጀመሪያ ጊዜ",
+        tableStopTime: "መዝጊያ ጊዜ",
+        tableDuration: "ቆይታ",
+        startedAt: "ጀምሯል በ",
+        confirmReset: "እርግጠኛ ነዎት ሁሉንም የኮንትራክሽን ዳታ መሰረዝ ይፈልጋሉ? ይህ ተመላሽ አይሆንም።"
+      },
+      th: {
+        title: "ตัวติดตามการคลอด",
+        headlineAverages: "ค่าเฉลี่ย",
+        headlineHistory: "ประวัติการหดตัว",
+        start: "เริ่มต้น",
+        stop: "หยุด",
+        reset: "รีเซ็ตข้อมูล",
+        contractionInProgress: "กำลังเกิดการหดตัว",
+        noContractionInProgress: "ไม่มีการหดตัวเกิดขึ้น",
+        averageContractionDuration: "ระยะเวลาการหดตัวเฉลี่ย:",
+        averagePauseDuration: "ระยะเวลาหยุดเฉลี่ย:",
+        noContractionHistory: "ไม่พบประวัติการหดตัว",
+        contraction: "การหดตัว",
+        pause: "หยุดพัก",
+        elapsed: "เวลาที่ผ่านไป:",
+        infoText: "ข้อมูลทั้งหมดจะถูกเก็บไว้ในเบราว์เซอร์ของคุณโดยใช้คุกกี้ และไม่มีข้อมูลใดถูกส่งผ่านเครือข่าย คุณสามารถดาวน์โหลดไฟล์นี้และใช้งานแบบออฟไลน์ได้ทุกเมื่อบนอุปกรณ์ใดก็ได้",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "ประเภท",
+        tableStartTime: "เวลาเริ่มต้น",
+        tableStopTime: "เวลาเลิก",
+        tableDuration: "ระยะเวลา",
+        startedAt: "เริ่มที่",
+        confirmReset: "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการหดตัวทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้."
+      },
+      sw: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      },
+      nl: {
+        title: "Wehentracker",
+        headlineAverages: "Gemiddelden",
+        headlineHistory: "Geschiedenis van contracties",
+        start: "Start",
+        stop: "Stop",
+        reset: "Reset gegevens",
+        contractionInProgress: "Contractie bezig",
+        noContractionInProgress: "Geen contractie bezig.",
+        averageContractionDuration: "Gemiddelde contractieduur:",
+        averagePauseDuration: "Gemiddelde pauzeduur:",
+        noContractionHistory: "Geen contractiegeschiedenis geregistreerd.",
+        contraction: "Contractie",
+        pause: "Pauze",
+        elapsed: "Verstreken tijd:",
+        infoText: "Alle gegevens worden lokaal in je browser opgeslagen met cookies, en er wordt niets over het netwerk verzonden. Je kunt dit bestand downloaden en offline op elk moment op elk apparaat uitvoeren.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Type",
+        tableStartTime: "Starttijd",
+        tableStopTime: "Eindtijd",
+        tableDuration: "Duur",
+        startedAt: "gestart om",
+        confirmReset: "Weet je zeker dat je alle contractiegegevens wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+      },
+      pl: {
+        title: "Śledzenie skurczów",
+        headlineAverages: "Średnie",
+        headlineHistory: "Historia skurczów",
+        start: "Rozpocznij",
+        stop: "Zatrzymaj",
+        reset: "Resetuj dane",
+        contractionInProgress: "Skurcz w toku",
+        noContractionInProgress: "Brak trwającego skurczu.",
+        averageContractionDuration: "Średni czas trwania skurczu:",
+        averagePauseDuration: "Średni czas trwania przerwy:",
+        noContractionHistory: "Brak zapisanej historii skurczów.",
+        contraction: "Skurcz",
+        pause: "Przerwa",
+        elapsed: "Minęło:",
+        infoText: "Wszystkie dane są przechowywane lokalnie w Twojej przeglądarce za pomocą ciasteczek i nic nie jest wysyłane. Możesz pobrać ten plik i uruchomić go offline na dowolnym urządzeniu w dowolnym momencie.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Czas rozpoczęcia",
+        tableStopTime: "Czas zakończenia",
+        tableDuration: "Czas trwania",
+        startedAt: "rozpoczęto o",
+        confirmReset: "Czy na pewno chcesz usunąć wszystkie dane dotyczące skurczów? Operacja ta nie może zostać cofnięta."
+      },
+      hu: {
+        title: "Összehúzódáskövető",
+        headlineAverages: "Átlagok",
+        headlineHistory: "Összehúzódások története",
+        start: "Indítás",
+        stop: "Leállítás",
+        reset: "Adatok visszaállítása",
+        contractionInProgress: "Összehúzódás folyamatban",
+        noContractionInProgress: "Nincs folyamatban lévő összehúzódás.",
+        averageContractionDuration: "Összehúzódás átlagos időtartama:",
+        averagePauseDuration: "Szünet átlagos időtartama:",
+        noContractionHistory: "Nincs rögzített összehúzódás előzmény.",
+        contraction: "Összehúzódás",
+        pause: "Szünet",
+        elapsed: "Eltelt idő:",
+        infoText: "Minden adatot a böngészőben sütikkel helyileg tárolunk, és semmi sem kerül elküldésre a hálózaton keresztül. Ezt a fájlt letöltheted, és bármikor offline, bármilyen eszközön futtathatod.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Típus",
+        tableStartTime: "Kezdés ideje",
+        tableStopTime: "Befejezés ideje",
+        tableDuration: "Időtartam",
+        startedAt: "elindult ekkor",
+        confirmReset: "Biztosan törölni szeretnéd az összes összehúzódási adatot? Ezt nem lehet visszavonni."
+      },
+      th: {
+        title: "ตัวติดตามการคลอด",
+        headlineAverages: "ค่าเฉลี่ย",
+        headlineHistory: "ประวัติการหดตัว",
+        start: "เริ่มต้น",
+        stop: "หยุด",
+        reset: "รีเซ็ตข้อมูล",
+        contractionInProgress: "กำลังเกิดการหดตัว",
+        noContractionInProgress: "ไม่มีการหดตัวเกิดขึ้น",
+        averageContractionDuration: "ระยะเวลาการหดตัวเฉลี่ย:",
+        averagePauseDuration: "ระยะเวลาหยุดเฉลี่ย:",
+        noContractionHistory: "ไม่พบประวัติการหดตัว",
+        contraction: "การหดตัว",
+        pause: "หยุดพัก",
+        elapsed: "เวลาที่ผ่านไป:",
+        infoText: "ข้อมูลทั้งหมดจะถูกเก็บไว้ในเบราว์เซอร์ของคุณโดยใช้คุกกี้ และไม่มีข้อมูลใดถูกส่งผ่านเครือข่าย คุณสามารถดาวน์โหลดไฟล์นี้และใช้งานแบบออฟไลน์ได้ทุกเมื่อบนอุปกรณ์ใดก็ได้",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "ประเภท",
+        tableStartTime: "เวลาเริ่มต้น",
+        tableStopTime: "เวลาเลิก",
+        tableDuration: "ระยะเวลา",
+        startedAt: "เริ่มที่",
+        confirmReset: "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการหดตัวทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้."
+      },
+      sw: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      },
+      nl: {
+        title: "Wehentracker",
+        headlineAverages: "Gemiddelden",
+        headlineHistory: "Geschiedenis van contracties",
+        start: "Start",
+        stop: "Stop",
+        reset: "Reset gegevens",
+        contractionInProgress: "Contractie bezig",
+        noContractionInProgress: "Geen contractie bezig.",
+        averageContractionDuration: "Gemiddelde contractieduur:",
+        averagePauseDuration: "Gemiddelde pauzeduur:",
+        noContractionHistory: "Geen contractiegeschiedenis geregistreerd.",
+        contraction: "Contractie",
+        pause: "Pauze",
+        elapsed: "Verstreken tijd:",
+        infoText: "Alle gegevens worden lokaal in je browser opgeslagen met cookies, en er wordt niets over het netwerk verzonden. Je kunt dit bestand downloaden en offline op elk moment op elk apparaat uitvoeren.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Type",
+        tableStartTime: "Starttijd",
+        tableStopTime: "Eindtijd",
+        tableDuration: "Duur",
+        startedAt: "gestart om",
+        confirmReset: "Weet je zeker dat je alle contractiegegevens wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+      },
+      pl: {
+        title: "Śledzenie skurczów",
+        headlineAverages: "Średnie",
+        headlineHistory: "Historia skurczów",
+        start: "Rozpocznij",
+        stop: "Zatrzymaj",
+        reset: "Resetuj dane",
+        contractionInProgress: "Skurcz w toku",
+        noContractionInProgress: "Brak trwającego skurczu.",
+        averageContractionDuration: "Średni czas trwania skurczu:",
+        averagePauseDuration: "Średni czas trwania przerwy:",
+        noContractionHistory: "Brak zapisanej historii skurczów.",
+        contraction: "Skurcz",
+        pause: "Przerwa",
+        elapsed: "Minęło:",
+        infoText: "Wszystkie dane są przechowywane lokalnie w Twojej przeglądarce za pomocą ciasteczek i nic nie jest wysyłane. Możesz pobrać ten plik i uruchomić go offline na dowolnym urządzeniu w dowolnym momencie.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Czas rozpoczęcia",
+        tableStopTime: "Czas zakończenia",
+        tableDuration: "Czas trwania",
+        startedAt: "rozpoczęto o",
+        confirmReset: "Czy na pewno chcesz usunąć wszystkie dane dotyczące skurczów? Operacja ta nie może zostać cofnięta."
+      },
+      hu: {
+        title: "Összehúzódáskövető",
+        headlineAverages: "Átlagok",
+        headlineHistory: "Összehúzódások története",
+        start: "Indítás",
+        stop: "Leállítás",
+        reset: "Adatok visszaállítása",
+        contractionInProgress: "Összehúzódás folyamatban",
+        noContractionInProgress: "Nincs folyamatban lévő összehúzódás.",
+        averageContractionDuration: "Összehúzódás átlagos időtartama:",
+        averagePauseDuration: "Szünet átlagos időtartama:",
+        noContractionHistory: "Nincs rögzített összehúzódás előzmény.",
+        contraction: "Összehúzódás",
+        pause: "Szünet",
+        elapsed: "Eltelt idő:",
+        infoText: "Minden adatot a böngészőben sütikkel helyileg tárolunk, és semmi sem kerül elküldésre a hálózaton keresztül. Ezt a fájlt letöltheted, és bármikor offline, bármilyen eszközön futtathatod.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Típus",
+        tableStartTime: "Kezdés ideje",
+        tableStopTime: "Befejezés ideje",
+        tableDuration: "Időtartam",
+        startedAt: "elindult ekkor",
+        confirmReset: "Biztosan törölni szeretnéd az összes összehúzódási adatot? Ezt nem lehet visszavonni."
+      },
+      th: {
+        title: "ตัวติดตามการคลอด",
+        headlineAverages: "ค่าเฉลี่ย",
+        headlineHistory: "ประวัติการหดตัว",
+        start: "เริ่มต้น",
+        stop: "หยุด",
+        reset: "รีเซ็ตข้อมูล",
+        contractionInProgress: "กำลังเกิดการหดตัว",
+        noContractionInProgress: "ไม่มีการหดตัวเกิดขึ้น",
+        averageContractionDuration: "ระยะเวลาการหดตัวเฉลี่ย:",
+        averagePauseDuration: "ระยะเวลาหยุดเฉลี่ย:",
+        noContractionHistory: "ไม่พบประวัติการหดตัว",
+        contraction: "การหดตัว",
+        pause: "หยุดพัก",
+        elapsed: "เวลาที่ผ่านไป:",
+        infoText: "ข้อมูลทั้งหมดจะถูกเก็บไว้ในเบราว์เซอร์ของคุณโดยใช้คุกกี้ และไม่มีข้อมูลใดถูกส่งผ่านเครือข่าย คุณสามารถดาวน์โหลดไฟล์นี้และใช้งานแบบออฟไลน์ได้ทุกเมื่อบนอุปกรณ์ใดก็ได้",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "ประเภท",
+        tableStartTime: "เวลาเริ่มต้น",
+        tableStopTime: "เวลาเลิก",
+        tableDuration: "ระยะเวลา",
+        startedAt: "เริ่มที่",
+        confirmReset: "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการหดตัวทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้."
+      },
+      sw: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      },
+      am: {
+        title: "የወሊድ ቁጥጥር",
+        headlineAverages: "አማካይ",
+        headlineHistory: "ኮንትራክሽን ታሪክ",
+        start: "ጀምር",
+        stop: "ቆም",
+        reset: "ዳታ እንደገና ማስቀመጥ",
+        contractionInProgress: "ኮንትራክሽን በሂደት ላይ",
+        noContractionInProgress: "ኮንትራክሽን በሂደት ላይ የለም።",
+        averageContractionDuration: "የኮንትራክሽን አማካይ ቆይታ:",
+        averagePauseDuration: "የማቆም አማካይ ቆይታ:",
+        noContractionHistory: "የኮንትራክሽን ታሪክ አልተመዘገበም።",
+        contraction: "ኮንትራክሽን",
+        pause: "ቆም",
+        elapsed: "ያልፈው ጊዜ:",
+        infoText: "ሁሉም ዳታ በኩኪዎች በመጠቀም በብሮዙርዎ ውስጥ አካባቢያዊ ይደረጋል፣ እና ምንም ነገር በመስመር ላይ አይልክም። ይህን ፋይል ማውረድ እና በማንኛውም መሣሪያ በተለያዩ ጊዜያት ኦፍላይን ማስተካከል ይችላሉ።",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "አይነት",
+        tableStartTime: "መጀመሪያ ጊዜ",
+        tableStopTime: "መዝጊያ ጊዜ",
+        tableDuration: "ቆይታ",
+        startedAt: "ጀምሯል በ",
+        confirmReset: "እርግጠኛ ነዎት ሁሉንም የኮንትራክሽን ዳታ መሰረዝ ይፈልጋሉ? ይህ ተመላሽ አይሆንም።"
+      },
+      th: {
+        title: "ตัวติดตามการคลอด",
+        headlineAverages: "ค่าเฉลี่ย",
+        headlineHistory: "ประวัติการหดตัว",
+        start: "เริ่มต้น",
+        stop: "หยุด",
+        reset: "รีเซ็ตข้อมูล",
+        contractionInProgress: "กำลังเกิดการหดตัว",
+        noContractionInProgress: "ไม่มีการหดตัวเกิดขึ้น",
+        averageContractionDuration: "ระยะเวลาการหดตัวเฉลี่ย:",
+        averagePauseDuration: "ระยะเวลาหยุดเฉลี่ย:",
+        noContractionHistory: "ไม่พบประวัติการหดตัว",
+        contraction: "การหดตัว",
+        pause: "หยุดพัก",
+        elapsed: "เวลาที่ผ่านไป:",
+        infoText: "ข้อมูลทั้งหมดจะถูกเก็บไว้ในเบราว์เซอร์ของคุณโดยใช้คุกกี้ และไม่มีข้อมูลใดถูกส่งผ่านเครือข่าย คุณสามารถดาวน์โหลดไฟล์นี้และใช้งานแบบออฟไลน์ได้ทุกเมื่อบนอุปกรณ์ใดก็ได้",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "ประเภท",
+        tableStartTime: "เวลาเริ่มต้น",
+        tableStopTime: "เวลาเลิก",
+        tableDuration: "ระยะเวลา",
+        startedAt: "เริ่มที่",
+        confirmReset: "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการหดตัวทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้."
+      },
+      sw: {
+        title: "Förlossningsspårare",
+        headlineAverages: "Medelvärden",
+        headlineHistory: "Kontraktionshistorik",
+        start: "Starta",
+        stop: "Stoppa",
+        reset: "Återställ data",
+        contractionInProgress: "Kontraktion pågår",
+        noContractionInProgress: "Ingen kontraktion pågår.",
+        averageContractionDuration: "Genomsnittlig kontraktionsvaraktighet:",
+        averagePauseDuration: "Genomsnittlig pausvaraktighet:",
+        noContractionHistory: "Ingen kontraktionshistorik registrerad.",
+        contraction: "Kontraktion",
+        pause: "Paus",
+        elapsed: "Förfluten tid:",
+        infoText: "Alla data lagras lokalt i din webbläsare med hjälp av cookies och inget skickas över nätverket. Du kan ladda ner denna fil och köra den offline när som helst på vilken enhet som helst.",
+        themeDark: "🌙",
+        themeLight: "☀",
+        tableNumber: "#",
+        tableType: "Typ",
+        tableStartTime: "Starttid",
+        tableStopTime: "Sluttid",
+        tableDuration: "Varaktighet",
+        startedAt: "startade vid",
+        confirmReset: "Är du säker på att du vill radera all kontraktionsdata? Detta kan inte ångras."
+      }
+    };
+    function t(key) {
+      return i18n[currentLang][key] || key;
+    }
+
+    // --- Cookie Helper Functions ---
+    function setCookie(cname, cvalue, exdays) {
+      var d = new Date();
+      d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+      var expires = "expires=" + d.toUTCString();
+      document.cookie = cname + "=" + encodeURIComponent(cvalue) + ";" + expires + ";path=/";
+    }
+    function getCookie(cname) {
+      var name = cname + "=";
+      var ca = document.cookie.split(';');
+      for (var i = 0; i < ca.length; i++) {
+        var c = ca[i].trim();
+        if (c.indexOf(name) === 0) {
+          return decodeURIComponent(c.substring(name.length, c.length));
+        }
+      }
+      return "";
+    }
+
+    // --- Global Variables ---
+    var labors = [];
+    var currentLabor = null;
+    var stopwatchInterval = null;
+
+    // --- Data Persistence Functions ---
+    function loadData() {
+      var laborsCookie = getCookie("labors");
+      if (laborsCookie) {
+        try {
+          labors = JSON.parse(laborsCookie);
+        } catch (e) {
+          labors = [];
+        }
+      }
+      var currentLaborCookie = getCookie("currentLabor");
+      if (currentLaborCookie) {
+        currentLabor = parseInt(currentLaborCookie);
+      }
+    }
+    function saveLabors() {
+      setCookie("labors", JSON.stringify(labors), 365);
+    }
+    function saveCurrentLabor() {
+      if (currentLabor !== null) {
+        setCookie("currentLabor", currentLabor, 365);
+      } else {
+        setCookie("currentLabor", "", -1);
+      }
+    }
+
+    // --- Utility Functions ---
+    function formatTime(ts) {
+      var date = new Date(ts);
+      return date.toLocaleString();
+    }
+    function calculateAverages() {
+      var avgLength = 0;
+      var avgInterval = 0;
+      if (labors.length > 0) {
+        var totalDuration = 0;
+        labors.forEach(function(labor) {
+          totalDuration += (labor.stop - labor.start);
+        });
+        avgLength = totalDuration / labors.length;
+      }
+      if (labors.length > 1) {
+        var totalInterval = 0;
+        for (var i = 1; i < labors.length; i++) {
+          totalInterval += (labors[i].start - labors[i - 1].stop);
+        }
+        avgInterval = totalInterval / (labors.length - 1);
+      }
+      return { avgLength: avgLength, avgInterval: avgInterval };
+    }
+    function formatDuration(ms) {
+      var totalSeconds = Math.floor(ms / 1000);
+      var hours = Math.floor(totalSeconds / 3600);
+      var minutes = Math.floor((totalSeconds % 3600) / 60);
+      var seconds = totalSeconds % 60;
+      return (hours > 0 ? hours + "h " : "") +
+             (minutes > 0 ? minutes + "m " : "") +
+             seconds + "s";
+    }
+
+    // --- Export CSV Functions (reverse order, with reversed numbering) ---
+    function getExportTimestamp() {
+      if (labors.length > 0) {
+        var lastStop = labors[labors.length - 1].stop;
+        var date = new Date(lastStop);
+        var year = date.getFullYear();
+        var month = ("0" + (date.getMonth() + 1)).slice(-2);
+        var day = ("0" + date.getDate()).slice(-2);
+        var hours = ("0" + date.getHours()).slice(-2);
+        var minutes = ("0" + date.getMinutes()).slice(-2);
+        var seconds = ("0" + date.getSeconds()).slice(-2);
+        return year + month + day + "_" + hours + minutes + seconds;
+      } else {
+        return getTimestamp();
+      }
+    }
+    function getTimestamp() {
+      var now = new Date();
+      var year = now.getFullYear();
+      var month = ("0" + (now.getMonth() + 1)).slice(-2);
+      var day = ("0" + now.getDate()).slice(-2);
+      var hours = ("0" + now.getHours()).slice(-2);
+      var minutes = ("0" + now.getMinutes()).slice(-2);
+      var seconds = ("0" + now.getSeconds()).slice(-2);
+      return year + month + day + "_" + hours + minutes + seconds;
+    }
+    function exportCSV() {
+      var csvContent = "No,Type,Start Time,Stop Time,Duration\n";
+      // Total rows: for L contractions, total rows = 2L - 1.
+      var totalRows = (labors.length > 0) ? (2 * labors.length - 1) : 0;
+      var rowNumber = totalRows;
+      for (var i = labors.length - 1; i >= 0; i--) {
+        var contraction = labors[i];
+        var contractionRow = [
+          rowNumber,
+          t("contraction"),
+          '"' + formatTime(contraction.start) + '"',
+          '"' + formatTime(contraction.stop) + '"',
+          '"' + formatDuration(contraction.stop - contraction.start) + '"'
+        ];
+        csvContent += contractionRow.join(",") + "\n";
+        rowNumber--;
+        if (i > 0) {
+          var pauseDuration = contraction.start - labors[i - 1].stop;
+          var pauseRow = [
+            rowNumber,
+            t("pause"),
+            '"' + formatTime(labors[i - 1].stop) + '"',
+            '"' + formatTime(contraction.start) + '"',
+            '"' + formatDuration(pauseDuration) + '"'
+          ];
+          csvContent += pauseRow.join(",") + "\n";
+          rowNumber--;
+        }
+      }
+      var filename = "labor_data_" + getExportTimestamp() + ".csv";
+      var encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+      var link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // --- Stopwatch Functions ---
+    function startStopwatch() {
+      var stopwatchElement = document.getElementById("stopwatch");
+      stopwatchElement.style.display = "block";
+      if (stopwatchInterval !== null) {
+        clearInterval(stopwatchInterval);
+      }
+      stopwatchInterval = setInterval(function() {
+        if (currentLabor !== null) {
+          var elapsed = Math.floor((Date.now() - currentLabor) / 1000);
+          stopwatchElement.innerHTML = t("elapsed") + " " + elapsed + "s";
+        }
+      }, 1000);
+    }
+    function stopStopwatch() {
+      var stopwatchElement = document.getElementById("stopwatch");
+      stopwatchElement.style.display = "none";
+      if (stopwatchInterval !== null) {
+        clearInterval(stopwatchInterval);
+        stopwatchInterval = null;
+      }
+    }
+
+    // --- UI Update Function (reverse order with reversed numbering) ---
+    function updateDisplay() {
+      // Update headlines with translated text
+      document.getElementById("title").textContent = t("title");
+      document.getElementById("headlineAverages").textContent = t("headlineAverages");
+      document.getElementById("headlineHistory").textContent = t("headlineHistory");
+      // Update Reset button text
+      document.getElementById("resetButton").textContent = t("reset");
+      
+      // Update info popup text
+      document.getElementById("infoPopup").innerHTML = "<p>" + t("infoText") + "</p>";
+      
+      var statusDiv = document.getElementById("status");
+      if (currentLabor !== null) {
+        statusDiv.innerHTML = "<p><strong>" + t("contractionInProgress") + "</strong> (" + t("startedAt") + " " + formatTime(currentLabor) + ")</p>";
+      } else {
+        statusDiv.innerHTML = "<p>" + t("noContractionInProgress") + "</p>";
+      }
+      var avgs = calculateAverages();
+      var avgLengthStr = labors.length > 0 ? formatDuration(avgs.avgLength) : "N/A";
+      var avgIntervalStr = labors.length > 1 ? formatDuration(avgs.avgInterval) : "N/A";
+      document.getElementById("averages").innerHTML = "<p>" + t("averageContractionDuration") + " " + avgLengthStr + "</p>" +
+                                                      "<p>" + t("averagePauseDuration") + " " + avgIntervalStr + "</p>";
+      var historyDiv = document.getElementById("history");
+      if (labors.length === 0) {
+        historyDiv.innerHTML = "<p>" + t("noContractionHistory") + "</p>";
+      } else {
+        // Total rows in reverse order: 2L - 1
+        var totalRows = 2 * labors.length - 1;
+        var rowNumber = totalRows;
+        var html = "<table><tr>" +
+                   "<th>" + t("tableNumber") + "</th>" +
+                   "<th>" + t("tableType") + "</th>" +
+                   "<th>" + t("tableStartTime") + "</th>" +
+                   "<th>" + t("tableStopTime") + "</th>" +
+                   "<th>" + t("tableDuration") + "</th>" +
+                   "</tr>";
+        for (var i = labors.length - 1; i >= 0; i--) {
+          var contraction = labors[i];
+          var contractionDuration = contraction.stop - contraction.start;
+          html += "<tr><td>" + rowNumber + "</td>" +
+                  "<td>" + t("contraction") + "</td>" +
+                  "<td>" + formatTime(contraction.start) + "</td>" +
+                  "<td>" + formatTime(contraction.stop) + "</td>" +
+                  "<td>" + formatDuration(contractionDuration) + "</td></tr>";
+          rowNumber--;
+          if (i > 0) {
+            var pauseDuration = contraction.start - labors[i - 1].stop;
+            html += "<tr class='pause-row'><td>" + rowNumber + "</td>" +
+                    "<td>" + t("pause") + "</td>" +
+                    "<td>" + formatTime(labors[i - 1].stop) + "</td>" +
+                    "<td>" + formatTime(contraction.start) + "</td>" +
+                    "<td>" + formatDuration(pauseDuration) + "</td></tr>";
+            rowNumber--;
+          }
+        }
+        html += "</table>";
+        historyDiv.innerHTML = html;
+      }
+      var exportButton = document.getElementById("exportCSV");
+      exportButton.style.display = (labors.length === 0) ? "none" : "flex";
+      var startStopButton = document.getElementById("startStopButton");
+      startStopButton.textContent = (currentLabor === null) ? t("start") : t("stop");
+    }
+
+    // --- Button Event Handlers ---
+    document.getElementById("startStopButton").addEventListener("click", function() {
+      if (currentLabor === null) {
+        currentLabor = Date.now();
+        saveCurrentLabor();
+        updateDisplay();
+        startStopwatch();
+      } else {
+        var stopTime = Date.now();
+        labors.push({ start: currentLabor, stop: stopTime });
+        currentLabor = null;
+        saveLabors();
+        saveCurrentLabor();
+        updateDisplay();
+        stopStopwatch();
+      }
+    });
+    document.getElementById("resetButton").addEventListener("click", function() {
+      if (confirm(t("confirmReset"))) {
+        labors = [];
+        currentLabor = null;
+        saveLabors();
+        saveCurrentLabor();
+        updateDisplay();
+        stopStopwatch();
+      }
+    });
+    document.getElementById("exportCSV").addEventListener("click", function() {
+      exportCSV();
+    });
+
+    // --- Info Popup Functionality ---
+    (function() {
+      var infoButton = document.getElementById('infoButton');
+      var infoPopup = document.getElementById('infoPopup');
+      infoButton.addEventListener('click', function(event) {
+        event.stopPropagation();
+        infoPopup.style.display = (infoPopup.style.display === 'block') ? 'none' : 'block';
+      });
+      document.addEventListener('click', function() {
+        if (infoPopup.style.display === 'block') {
+          infoPopup.style.display = 'none';
+        }
+      });
+      infoPopup.addEventListener('click', function(event) {
+        event.stopPropagation();
+        infoPopup.style.display = 'none';
+      });
+    })();
+
+    // --- Theme Toggle Functionality ---
+    (function() {
+      var themeToggle = document.getElementById('themeToggle');
+      var savedTheme = getCookie("theme");
+      if (savedTheme) {
+        if (savedTheme === "dark") {
+          document.body.classList.add("dark-theme");
+          themeToggle.innerHTML = t("themeLight");
+        } else {
+          document.body.classList.remove("dark-theme");
+          themeToggle.innerHTML = t("themeDark");
+        }
+      } else {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add("dark-theme");
+          themeToggle.innerHTML = t("themeLight");
+        } else {
+          document.body.classList.remove("dark-theme");
+          themeToggle.innerHTML = t("themeDark");
+        }
+      }
+      themeToggle.addEventListener('click', function() {
+        document.body.classList.toggle('dark-theme');
+        if (document.body.classList.contains('dark-theme')) {
+          themeToggle.innerHTML = t("themeLight");
+          setCookie("theme", "dark", 365);
+        } else {
+          themeToggle.innerHTML = t("themeDark");
+          setCookie("theme", "light", 365);
+        }
+      });
+    })();
+
+    // --- Initialization ---
+    loadData();
+    updateDisplay();
+    if (currentLabor !== null) {
+      startStopwatch();
+    }
+  })();
+  </script>
+</body>
+</html>
